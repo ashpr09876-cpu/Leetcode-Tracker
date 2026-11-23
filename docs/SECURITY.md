@@ -1,0 +1,12 @@
+# Security
+- Passwords: Argon2id (argon2-cffi); login does a dummy hash for unknown emails to reduce timing differences; generic error message.
+- Tokens: short-lived JWT access token (memory only in the browser); refresh token random, stored hashed, HttpOnly + SameSite=Lax cookie limited to `/api/v1/auth`, rotated each use, family revoked on reuse, revoked on logout/password change/reset/account disable.
+- CSRF: refresh/logout require custom header `X-Requested-With` (not sendable cross-site without CORS preflight; CORS origins are an allow-list).
+- Google OAuth: authorization-code flow; signed, expiring `state` that must match an HttpOnly cookie; token exchange server-side; requires `email_verified`.
+- Authorization: every resource query filters by the authenticated user (tests assert isolation); admin routes need `is_admin`.
+- Validation: Pydantic v2 everywhere; LIKE wildcards escaped; request-body limits per field.
+- Rate limiting: in-memory per-process limiter on auth, sync and AI endpoints (replace with Redis-backed limiting for multi-instance deployments).
+- Secrets only in `.env` files (git-ignored); `.env.example` has placeholders; production refuses the default `SECRET_KEY`. API keys never reach the frontend.
+- Logging: no passwords/tokens logged; reset links are logged **only** because no email service exists - do not use that in production.
+- PWA: service worker never caches `/api/*`.
+- Not done: email verification, 2FA, account lockout, Redis-backed rate limits, audit log, dependency vulnerability scanning. Review before real-world use.
